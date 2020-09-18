@@ -1,6 +1,6 @@
 -- was using this to semi-automatically get the program from a server i was running with python
 
-local address = "http://localhost:8000/"
+local address = "https://github.com/echoofskyz/plethorastoSys/blob/master/"
 local baseDir = "stoSys"
 
 -- open new shell so theres a user usable terminal
