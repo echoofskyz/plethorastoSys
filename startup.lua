@@ -1,3 +1,5 @@
+-- was using this to semi-automatically get the program from a server i was running with python
+
 local address = "http://localhost:8000/"
 local baseDir = "stoSys"
 
