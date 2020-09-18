@@ -127,7 +127,10 @@ function findItem(name)
 end
 
 -- retrieves all item from storage with the display name (request)
+-- TODO: make it only take a specific amount of items instead of just trying to fill the turtle
 function retrieveItems(request)
+	dumpItems()
+	
 	for turtleSlot = 1, 16 do
 		local chest, chestId, slot = findItem(request)
 		
