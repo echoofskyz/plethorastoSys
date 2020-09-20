@@ -1,37 +1,59 @@
--- was using this to semi-automatically get the program from a server i was running with python
+-- for updating stoSys and running it
+-- might be a good idea to have this ask for settings
+-- 		like which side a peripheral is on and
+--		edit the fields of the program to use them
 
-local address = "https://github.com/echoofskyz/plethorastoSys/blob/master/"
+local address = "http://localhost:8000/"
 local baseDir = "stoSys"
 
 -- open new shell so theres a user usable terminal
 shell.run("bg")
+shell.run("bg lua")
 
 -- loop waiting for R keypress to redownload and run code
-print( "Press R to test, or S to update this program." )	
-repeat
+while true do
+	print("Press R to test, or S to update this program.")
 	local event, key = os.pullEvent( "key" )
 	
-	-- retests
+	-- tests
 	if key == keys.r then
-		-- gets the fileNames file that has all of the files to download
-		shell.run("wget "..address.."fileNames tmp")
+		local isNeural = false
+		-- determine if the computer is a neural interface with glasses
+		-- i want to install different things if it is
+		--		checks if the glasses's canvas exists
+		local modules = peripheral.wrap("back")
+		
+		if modules and modules.hasModule("plethora:glasses") then
+			isNeural = true
+
+			-- gets the fileNames file that has all of the files to download
+			shell.run("wget "..address.."NIFiles tmp")
+		else
+			-- gets the fileNames file that has all of the files to download
+			shell.run("wget "..address.."turtleFiles tmp")
+		end
 		
 		-- deletes the old folder
 		shell.run("rm "..baseDir)
 
 		-- makes a new folder
 		shell.run("mkdir "..baseDir)
+		
 		for line in io.lines("tmp") do
-			shell.run("wget "..address..baseDir.."/"..line.." ./"..baseDir.."/"..line)
+			if isNeural then
+				shell.run("wget "..address..baseDir.."/neural/"..line.." ./"..baseDir.."/"..line)
+			else
+				shell.run("wget "..address..baseDir.."/turtle/"..line.." ./"..baseDir.."/"..line)
+			end
 		end
 
 		shell.run("rm tmp")
-		--shell.run("bg ./"..baseDir.."/main")
 		
-		sleep(.5)
+		shell.run("bg ./"..baseDir.."/main")
+		
+		sleep(0.5)
 		term.clear()
 		term.setCursorPos(1, 1)
-		print( "Press R to test, or S to update this program." )
 	end
 	
 	-- updates this file
@@ -40,4 +62,4 @@ repeat
 		shell.run("wget http://localhost:8000/startup.lua")
 		shell.run("reboot")
 	end
-until false
+end
