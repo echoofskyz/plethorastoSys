@@ -132,18 +132,26 @@ function openStoSys()
 		-- wait for the glasses to get clicked
 		--		should make this a button
 		local _, button, x, y = os.pullEvent("glasses_click")
+		print("Opening GUI")
 		
 		-- if storedItems isnt loaded, wait for it to be loaded
 		--		might add a loading animation
 		if not storedItems then
+			print("Error: items not loaded")
+			local loadingText = mainCan.addText({0, 10}, "Loading...", 0xFFFFFFFF, 3)
+			
 			wGetStored()
 			
 			os.pullEvent("loaded_stored")
+			
+			loadingText.remove()
 		end
 		
 		-- initialize things for this new open gui
 		local can = mainCan.addGroup({0, 10})
-		local guiSlots = {group = {}, item = {}, count = {}}
+		can.addRectangle(32, 24, 448, 112, 0xAAAAAA44)
+		
+		local guiSlots = {group = {}, item = {}, count = {}, rect = {}}
 		
 		local slot = 1
 		
@@ -152,7 +160,8 @@ function openStoSys()
 				guiSlots["group"][slot] = can.addGroup({col * 14 + 18, row * 14 + 10 })
 				
 				-- want to add some cool animations and shrink the top/bottom items later
-				guiSlots["item"][slot] = guiSlots["group"][slot].addItem({0, 0}, "minecraft:structure_void", 0, 0.9)
+				guiSlots["rect"][slot] = guiSlots["group"][slot].addRectangle(2, 2, 10, 10, 0x00000055)
+				guiSlots["item"][slot] = guiSlots["group"][slot].addItem({0, 0}, "minecraft:air", 0, 0.9)
 				guiSlots["count"][slot] = guiSlots["group"][slot].addText({0, 10}, "", 0xFFFFFFFF, 0.5)
 				
 				slot = slot + 1
@@ -165,7 +174,7 @@ function openStoSys()
 			local storedKey, storedItem = next(storedItems)
 		
 			for slot = 1, #guiSlots["group"] do
-				guiSlots["item"][slot].setItem("minecraft:structure_void", 0)
+				guiSlots["item"][slot].setItem("minecraft:air", 0)
 				guiSlots["count"][slot].setText("")
 
 				if storedItem then

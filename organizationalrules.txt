@@ -1,0 +1,21 @@
+main.lua:
+	does:
+		calls functions from mainFuncs.lua
+	does not:
+		do anything else
+
+mainFuncs.lua:
+	does:
+		declare all the functions used directly in main.lua
+	does not:
+		do anything else
+		
+storageFuncs.lua:
+	does:
+	does not:
+		declare funcs directly used in main.lua
+	
+	items should be added to nameLookup only when they are added to the system
+	do not access storage directly, go through the functions for storing and retrieving items
+	chests should only be queried when adding them to the table slots
+		otherwise look through slots for information 

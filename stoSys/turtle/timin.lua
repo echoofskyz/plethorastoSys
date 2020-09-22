@@ -1,4 +1,3 @@
-require("funcs")
 
 local chest = peripheral.wrap("minecraft:chest_0")
 local t1 = os.epoch()

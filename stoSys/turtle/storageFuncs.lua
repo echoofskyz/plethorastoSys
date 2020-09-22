@@ -1,8 +1,9 @@
--- Events: storeage_changed
-
--- might add a table to slots: inLookup
-
 cc = require("cc.pretty")
+
+local recieveFrequency = 1
+
+local modem = peripheral.wrap("right")
+modem.open(recieveFrequency)
 
 local baseDir = "stoSys"
 
@@ -66,7 +67,7 @@ function loadSlots()
 		end		
 	end
 	
-	os.queueEvent("storage_changed")
+	os.queueEvent("storage_update")
 end
 
 loadSlots()
@@ -94,11 +95,20 @@ function pushItemsFromSysND(location, name, damage, count)
 		end
 	end
 	
-	os.queueEvent("storage_changed")
+	os.queueEvent("storage_update")
 end
 
-function pullItemsToPlayerND(manipulatorID, name, damage, count)
-	local location = peripheral.wrap(manipulatorID).getInventory()
+local manipulator
+
+for _, peripheralName in pairs(peripheral.getNames()) do
+	if peripheralName:match("manipulator") then
+		manipulator = peripheralName
+		break
+	end
+end
+
+function pullItemsToPlayerND(name, damage, count)
+	local location = peripheral.wrap(manipulator).getInventory()
 
 	for slotID, slot in ipairs(slots) do
 		if slot["name"] == name and slot["damage"] == damage then
@@ -122,7 +132,7 @@ function pullItemsToPlayerND(manipulatorID, name, damage, count)
 		end
 	end
 	
-	os.queueEvent("storage_changed")
+	os.queueEvent("storage_update")
 end
 
 function storeItemTurtle(turtleSlot)
@@ -140,7 +150,7 @@ function storeItemTurtle(turtleSlot)
 		end
 	end
 	
-	os.queueEvent("storage_changed")
+	os.queueEvent("storage_update")
 end
 -- END SLOTID
 
@@ -249,3 +259,11 @@ function getStoredItems()
 	
 	return storedItems
 end
+
+function sendData(replyFrequency)
+	local message = "return "..tostring(cc.pretty(getStoredItems()))
+	
+	modem.transmit(replyFrequency, recieveFrequency, message)
+end
+
+sendData(2)

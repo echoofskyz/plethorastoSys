@@ -1,0 +1,26 @@
+all:
+	make it not break with things that have a small stack sizes, 4 stacks of ender pearls is ok, but 64 pickaxes is not
+	clean up code
+	rethink startup.lua/installer
+	rethink file naming
+	add appropriate errors
+		can only have the one turtle on the network
+		missing peripherals
+	figure out why i lose my shell window on crash
+	setup autocomplete with cc.choice
+
+turtle:
+	add BIGdump? should probably dump turtle inventory on turtle_inventory event
+	add defrag
+	add get num empty slots
+	might want to have a function to make the turtle suck and dump from an invintory in front of it or something
+	add a boolean to the table slots slots: inLookup
+	add a function in main that resends data whenever the storage is changed
+
+networking:
+	rethink what frequencies to use/how to store and get frequencies
+	
+crazy/interesting:
+	could i place/destroy shulker boxes and use them for long term storage?
+	might make seperate project for the gui
+	make printout for item types stored, count would be cool too
