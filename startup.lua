@@ -27,7 +27,7 @@ while true do
 			isNeural = true
 
 			-- gets the fileNames file that has all of the files to download
-			shell.run("wget "..address.."NIFiles tmp")
+			shell.run("wget "..address.."neuralFiles tmp")
 		else
 			-- gets the fileNames file that has all of the files to download
 			shell.run("wget "..address.."turtleFiles tmp")

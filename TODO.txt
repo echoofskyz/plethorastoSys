@@ -1,6 +1,7 @@
 all:
 	make it not break with things that have a small stack sizes, 4 stacks of ender pearls is ok, but 64 pickaxes is not
 	clean up code
+	add comments
 	rethink startup.lua/installer
 	rethink file naming
 	add appropriate errors
@@ -10,6 +11,7 @@ all:
 	setup autocomplete with cc.choice
 
 turtle:
+	have table updates not recheck/rewrite the entire table
 	add BIGdump? should probably dump turtle inventory on turtle_inventory event
 	add defrag
 	add get num empty slots
@@ -19,8 +21,22 @@ turtle:
 
 networking:
 	rethink what frequencies to use/how to store and get frequencies
+	should i send nameLookup on storage update too?
+		could send one message and check if second return exists
+
+neural:
+	gui will probably be split off at some point
+	also want realtime
+	waypoints would be really cool
+	add player inventory/ender chest
+	might setup a hotkey to use a kinetic module to stick a keyboard in my hand and click when i press it 
+	make this searchable
+	item drag and drop
+	should make this scrollable, it would be cool to have inventory, enderchest, and a 3x3 crafting grid in the gui
+
 	
 crazy/interesting:
 	could i place/destroy shulker boxes and use them for long term storage?
 	might make seperate project for the gui
 	make printout for item types stored, count would be cool too
+	could change nameLookup to item types, have it store item name, damage, max stack size

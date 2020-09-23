@@ -1,7 +1,7 @@
 
 local chest = peripheral.wrap("minecraft:chest_0")
 local t1 = os.epoch()
-chest.pullItems("turtle_0", 1)
+chest.getItem(1).getMetadata()
 local t2 = os.epoch()
 print(t2 - t1)
 
@@ -11,6 +11,7 @@ print(t2 - t1)
 --turtle.dropUp(): 0
 --turtle.getItemDetail(): 0 
 --chest.getItemMeta(): 3600
+--chest.getItem(1).getMetadata(): 7200
 
 
 --########################

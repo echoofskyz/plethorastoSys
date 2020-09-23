@@ -1,81 +1,70 @@
 cc = require("cc.pretty")
 
 local recieveFrequency = 1
-
-local modem = peripheral.wrap("right")
-modem.open(recieveFrequency)
-
 local baseDir = "stoSys"
 
-local chests = {}
-local numChests = 0
+local modem
 
--- search through all peripherals for chests
---		might store chests as full id's instead of just the number parts
-for _, peripheralName in ipairs(peripheral.getNames()) do
-	-- if i want to add other things like shulker boxes i need to make their peripheral id match here
-	if peripheralName:match("minecraft:chest") then
-		local chest = peripheral.wrap(peripheralName)
-		
-		local chestID = peripheralName
-		
-		chests[chestID] = chest
-		
-		numChests = numChests + 1
+for _, modemPerip in pairs({peripheral.find("modem")}) do
+	if modemPerip.isWireless() then
+		modem = modemPerip
+		break
 	end
 end
 
-print("Found "..numChests.." chests.")
+if not modem then error("No wireless modem found.") end
+
+modem.open(recieveFrequency)
+
+local chests = {}
+
+for _, chest in ipairs({peripheral.find("minecraft:chest")}) do
+	chests[peripheral.getName(chest)] = chest
+end
+
+print("Found "..#{peripheral.find("minecraft:chest")}.." chests.")
 
 local turtleID
 
--- get the transfer location/id of this turtle
-local firstChest = next(chests)
-
-for _, id in ipairs(chests[firstChest].getTransferLocations()) do
+for _, id in pairs(chests[next(chests)].getTransferLocations()) do
 	if id:match("turtle") then
 		turtleID = id
 	end
 end
 
-
--- SLOTID
 local slots = {}
 
-function loadSlots()
-	print("Loading Slots.")
-	
-	for chestID, chest in pairs(chests) do
-		local items = chest.list()
+print("Loading Slots.")
 
-		for chestSlot = 1, chest.size() do
-			if items[chestSlot] ~= nil then
-				slots[#slots + 1] = items[chestSlot]
-				slots[#slots]["chest"] = chest
-				slots[#slots]["slot"] = chestSlot
-				slots[#slots]["chestID"] = chestID
-			else
-				slots[#slots + 1] = {
-					name = nil,
-					damage = nil, 
-					count = nil, 
-					chest = chest, 
-					slot = chestSlot,
-					chestID = chestID
-					}
-			end
-		end		
-	end
-	
-	os.queueEvent("storage_update")
+for chestID, chest in pairs(chests) do
+	local items = chest.list()
+
+	for chestSlot = 1, chest.size() do
+		if items[chestSlot] ~= nil then
+			slots[#slots + 1] = items[chestSlot]
+			slots[#slots]["chest"] = chest
+			slots[#slots]["slot"] = chestSlot
+			slots[#slots]["chestID"] = chestID
+		else
+			slots[#slots + 1] = {
+				name = nil,
+				damage = nil, 
+				count = nil, 
+				chest = chest, 
+				slot = chestSlot,
+				chestID = chestID
+				}
+		end
+	end		
 end
 
-loadSlots()
+print("Slots loaded.")
 
-function pushItemsFromSysND(location, name, damage, count)
+function retrieveItemsND(name, damage, count)
+	print("ret "..name)
 	for slotID, slot in ipairs(slots) do
 		if slot["name"] == name and slot["damage"] == damage then
-			slot["chest"].pushItems(location, slot["slot"], count)
+			slot["chest"].pushItems(turtleID, slot["slot"], count)
 
 			if slot["count"] > count then
 				slot["count"] = slot["count"] - count
@@ -98,14 +87,7 @@ function pushItemsFromSysND(location, name, damage, count)
 	os.queueEvent("storage_update")
 end
 
-local manipulator
-
-for _, peripheralName in pairs(peripheral.getNames()) do
-	if peripheralName:match("manipulator") then
-		manipulator = peripheralName
-		break
-	end
-end
+local manipulator = peripheral.find("manipulator") or error("Manipulator not found")
 
 function pullItemsToPlayerND(name, damage, count)
 	local location = peripheral.wrap(manipulator).getInventory()
@@ -154,17 +136,17 @@ function storeItemTurtle(turtleSlot)
 end
 -- END SLOTID
 
--- NAMELOOKUP
-local nameLookup = {}
+-- itemTypes
+local itemTypes = {}
 
-function updateNameLookup()
-	print("Updating nameLookup.")
+function updateItemTypes()
+	print("Updating itemTypes.")
 	-- TODO: change this to use slotid instead of searching chests
 	for slotid, slot in ipairs(slots) do
 		if slot["name"] ~= nil then
 			local inList = false
 			
-			for displayName, itemID in ipairs(nameLookup) do
+			for displayName, itemID in ipairs(itemTypes) do
 				if slot["name"] == item["name"] and slot["damage"] == item["damage"] then 
 					inList = true
 					break
@@ -172,69 +154,48 @@ function updateNameLookup()
 			end
 			
 			if not inList then
-				local itemMeta = slot["chest"].getItemMeta(slot["slot"])
+				local itemMeta = slot["chest"].getItem(slot["slot"]).getMetadata()
 
-				nameLookup[itemMeta["displayName"]] = {name = itemMeta["name"], damage = itemMeta["damage"]}
+				itemTypes[itemMeta["displayName"]] = {name = itemMeta["name"], damage = itemMeta["damage"], maxCount = itemMeta["maxCount"]}
 			end
 		end
 	end
 	
-	--[[for _, chest in pairs(getChests()) do
-        for slot, item in pairs(chest.list()) do
-			local inList = false
-			
-			for displayName, itemID in ipairs(nameLookup) do
-				if item["name"] == itemID["name"] and item["damage"] == itemID["damage"] then
-					inList = true
-					break
-				end
-            end
-			
-			if not inList then
-				local itemMeta = chest.getItemMeta(slot)
-				
-				nameLookup[itemMeta["displayName"] ] = {name = itemMeta["name"], damage = itemMeta["damage"]}
-			end
-        end
-    end--]]
+	local file = io.open("./"..baseDir.."/itemTypes", "w+")
 	
-	local file = io.open("./"..baseDir.."/nameLookup", "w+")
-	
-	file:write("return "..tostring(cc.pretty(nameLookup)))	
+	file:write("return "..tostring(cc.pretty(itemTypes)))	
 	file:close()
 end
 
 -- TODO: see if i can get this to work with relative pathing
-local file = io.open("./"..baseDir.."/nameLookup", "r")
+local file = io.open("./"..baseDir.."/itemTypes", "r")
 
 if file == nil then
-	updateNameLookup()
+	updateItemTypes()
 else
 	local fileContent = file:read()
 	file:close()
 	
-	nameLookup = loadstring(fileContent)()
+	itemTypes = loadstring(fileContent)()
 end
 
 
 function getDisplayName(name, damage)
-	for displayName, itemID in pairs(nameLookup) do
+	for displayName, itemID in pairs(itemTypes) do
 		if itemID["name"] == name and itemID ["damage"] == damage then
 			return displayName
 		end
 	end
 end
 
--- END NAMELOOKUP
-
-function getItemsTurtleDN(displayName, count)
-	local itemID = nameLookup[displayName] 
-	
-	getItemsND(turtleID, itemID["name"], itemID["damage"], count)
+function getItemID(displayName)
+	print(itemTypes[displayName])
+	return itemTypes[displayName]
 end
 
+-- END itemTypes
 
--- maybe combine this with nameLookup?
+-- maybe combine this with itemTypes?
 function getStoredItems()
 	local storedItems = {}
 

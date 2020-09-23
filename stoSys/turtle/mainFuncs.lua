@@ -27,8 +27,11 @@ function terminalInput()
 			sendData(2)
 			
 			for turtleSlot = 1, 16 do
-				if turtleSlot == nil then
-					getItemsTurtleDN(inp:sub(5), 64)
+				if turtle.getItemDetail(turtleSlot) == nil then
+					local itemID = getItemID(inp:sub(5)) 
+	
+					retrieveItemsND(itemID["name"], itemID["damage"], 64)
+					break
 				end
 			end
 		end
@@ -56,7 +59,7 @@ function wirelessMessage()
 end
 
 function storeageUpdate()
-	while true
+	while true do
 		os.pullEvent("storage_update")
 		sendData(2)
 	end
