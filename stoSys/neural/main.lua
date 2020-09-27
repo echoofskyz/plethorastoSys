@@ -4,7 +4,6 @@
 
 -- i'm going to assume that the canvas is always 512x288
 require("mainFuncs")
-cc = require("cc.pretty")
 
 parallel.waitForAny(
 	wirelessMessage,

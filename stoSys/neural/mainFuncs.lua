@@ -135,6 +135,7 @@ function stoSys()
 					guiSlots["count"][slot].setText("")
 					
 					local item = itemList[slot]
+					
 					if item then
 						guiSlots["item"][slot].setItem(item["name"], item["damage"])
 						guiSlots["button"][slot]["name"] = item["name"]
@@ -153,7 +154,7 @@ function stoSys()
 			loadSlots(endSlots, playerEnd)
 			
 			local fixedPlayerInv = {}
-			for i = 0, 36 do
+			for i = 1, 36 do
 				if i <= 9 then
 					fixedPlayerInv[i + 27] = playerInv[i]
 				else
@@ -222,13 +223,15 @@ function stoSys()
 						loadSlots(endSlots, playerEnd)
 						
 						local fixedPlayerInv = {}
-						for i = 0, 36 do
+						for i = 1, 36 do
 							if i <= 9 then
 								fixedPlayerInv[i + 27] = playerInv[i]
 							else
 								fixedPlayerInv[i - 9] = playerInv[i]
 							end
 						end
+						
+						print(tostring(cc.pretty(playerInv)))
 			
 						loadSlots(invSlots, fixedPlayerInv)
 					end

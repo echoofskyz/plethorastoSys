@@ -1,5 +1,3 @@
-cc = require("cc.pretty")
-
 local recieveFrequency = 1
 local replyFrequency = 2
 local baseDir = "stoSys"
@@ -146,7 +144,7 @@ function updateItemTypes()
 	
 	local file = io.open("./"..baseDir.."/itemTypes", "w+")
 	
-	file:write("return "..tostring(cc.pretty(itemTypes)))	
+	file:write("return "..textutils.serialize(itemTypes))	
 	file:close()
 end
 
@@ -254,13 +252,13 @@ end
 
 function sendData()
 	while true do
-		local message = "sto ".."return "..tostring(cc.pretty(getStoredItems()))
+		local message = "sto ".."return "..textutils.serialize(getStoredItems())
 		modem.transmit(replyFrequency, recieveFrequency, message)
 
-		message = "end ".."return "..tostring(cc.pretty(peripheral.wrap(manipulator).getEnder().list()))
+		message = "end ".."return "..textutils.serialize(peripheral.wrap(manipulator).getEnder().list())
 		modem.transmit(replyFrequency, recieveFrequency, message)
 		
-		message = "inv ".."return "..tostring(cc.pretty(peripheral.wrap(manipulator).getInventory().list()))
+		message = "inv ".."return "..textutils.serialize(peripheral.wrap(manipulator).getInventory().list())
 		modem.transmit(replyFrequency, recieveFrequency, message)
 		
 		sleep(0.05)

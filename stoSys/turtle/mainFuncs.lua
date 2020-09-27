@@ -25,7 +25,6 @@ function terminalInput()
 			for turtleSlot = 1, 16 do
 				if turtle.getItemDetail(turtleSlot) == nil then
 					local itemID = getItemID(inp:sub(5))
-					print(tostring(cc.pretty(itemID)))
 	
 					retrieveItemsND(itemID["name"], itemID["damage"], 64)
 					break
