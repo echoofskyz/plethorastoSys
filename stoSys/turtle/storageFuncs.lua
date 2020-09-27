@@ -1,6 +1,7 @@
 cc = require("cc.pretty")
 
 local recieveFrequency = 1
+local replyFrequency = 2
 local baseDir = "stoSys"
 
 local modem
@@ -87,7 +88,7 @@ function retrieveItemsND(name, damage, count)
 	os.queueEvent("storage_update")
 end
 
-local manipulator = peripheral.find("manipulator") or error("Manipulator not found")
+local manipulator = peripheral.getName(peripheral.find("manipulator") or error("Manipulator not found"))
 
 function pullItemsToPlayerND(name, damage, count)
 	local location = peripheral.wrap(manipulator).getInventory()
@@ -116,24 +117,6 @@ function pullItemsToPlayerND(name, damage, count)
 	
 	os.queueEvent("storage_update")
 end
-
-function storeItemTurtle(turtleSlot)
-	local item = turtle.getItemDetail(turtleSlot)
-	
-	if item ~= nil then
-		for slotID, slot in ipairs(slots) do
-			if slot["name"] == nil then
-				slot["chest"].pullItems(turtleID, turtleSlot, 64, slot["slot"])
-				slot["name"] = item["name"]
-				slot["damage"] = item["damage"]
-				slot["count"] = item["count"]
-				break
-			end
-		end
-	end
-	
-	os.queueEvent("storage_update")
-end
 -- END SLOTID
 
 -- itemTypes
@@ -146,8 +129,8 @@ function updateItemTypes()
 		if slot["name"] ~= nil then
 			local inList = false
 			
-			for displayName, itemID in ipairs(itemTypes) do
-				if slot["name"] == item["name"] and slot["damage"] == item["damage"] then 
+			for _, itemType in ipairs(itemTypes) do
+				if slot["name"] == itemType["name"] and slot["damage"] == itemType["damage"] then 
 					inList = true
 					break
 				end
@@ -156,7 +139,7 @@ function updateItemTypes()
 			if not inList then
 				local itemMeta = slot["chest"].getItem(slot["slot"]).getMetadata()
 
-				itemTypes[itemMeta["displayName"]] = {name = itemMeta["name"], damage = itemMeta["damage"], maxCount = itemMeta["maxCount"]}
+				itemTypes[#itemTypes + 1] = {displayName = itemMeta["displayName"], name = itemMeta["name"], damage = itemMeta["damage"], maxCount = itemMeta["maxCount"]}
 			end
 		end
 	end
@@ -181,19 +164,67 @@ end
 
 
 function getDisplayName(name, damage)
-	for displayName, itemID in pairs(itemTypes) do
+	for _, itemType in pairs(itemTypes) do
 		if itemID["name"] == name and itemID ["damage"] == damage then
-			return displayName
+			return itemType["displayName"]
 		end
 	end
 end
 
 function getItemID(displayName)
-	print(itemTypes[displayName])
-	return itemTypes[displayName]
+	for _, itemType in pairs(itemTypes) do
+		if  itemType["displayName"] == displayName then
+			return itemType
+		end
+	end
 end
 
--- END itemTypes
+function getMaxStack(name, damage)
+	for _, itemType in pairs(itemTypes) do
+		if itemID["name"] == name and itemID ["damage"] == damage then
+			return itemType["maxCount"]
+		end
+	end
+end
+
+function storeItemTurtle(turtleSlot)
+	local item = turtle.getItemDetail(turtleSlot)
+	
+	if item ~= nil and item["nbtHash"] == nil then
+		local maxCount = turtle.getItemSpace(turtleSlot) + item["count"]
+		local count = item["count"]
+		
+		for slotID, slot in ipairs(slots) do			
+			if count > 0 then
+				if (slot["name"] == item["name"] 
+						and slot["damage"] == item["damage"] 
+						and maxCount > slot["count"]) then
+					count = count - slot["chest"].pullItems(turtleID, turtleSlot, 64, slot["slot"])
+				end
+			else 
+				break
+			end
+		end
+		
+		if count < 0 then
+			error("descrepecny, negative item count when transfering items")
+		end
+		
+		if count > 0 then
+			for slotID, slot in ipairs(slots) do			
+				if slot["name"] == nil then
+					slot["chest"].pullItems(turtleID, turtleSlot, 64, slot["slot"])
+					slot["name"] = item["name"]
+					slot["damage"] = item["damage"]
+					slot["count"] = item["count"]
+					break
+				end
+			end
+		end
+
+		os.queueEvent("storage_update")
+	end
+end
 
 -- maybe combine this with itemTypes?
 function getStoredItems()
@@ -221,10 +252,17 @@ function getStoredItems()
 	return storedItems
 end
 
-function sendData(replyFrequency)
-	local message = "return "..tostring(cc.pretty(getStoredItems()))
-	
-	modem.transmit(replyFrequency, recieveFrequency, message)
-end
+function sendData()
+	while true do
+		local message = "sto ".."return "..tostring(cc.pretty(getStoredItems()))
+		modem.transmit(replyFrequency, recieveFrequency, message)
 
-sendData(2)
+		message = "end ".."return "..tostring(cc.pretty(peripheral.wrap(manipulator).getEnder().list()))
+		modem.transmit(replyFrequency, recieveFrequency, message)
+		
+		message = "inv ".."return "..tostring(cc.pretty(peripheral.wrap(manipulator).getInventory().list()))
+		modem.transmit(replyFrequency, recieveFrequency, message)
+		
+		sleep(0.05)
+	end
+end

@@ -13,5 +13,4 @@ and the turtle accepts a few commands which are:
 	get <item>: retrieves a stack of the item for each of the turtle's slots 
 	
 works in minecraft 1.12
-do NOT put named items in the storage system, dont have any idea of how to deal with those
-tools with damage values probably also break things
+do NOT put named items directly into chests

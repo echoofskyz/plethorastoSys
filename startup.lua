@@ -49,7 +49,7 @@ while true do
 
 		shell.run("rm tmp")
 		
-		shell.run("bg ./"..baseDir.."/main")
+		shell.openTab("./"..baseDir.."/main")
 		
 		sleep(0.5)
 		term.clear()

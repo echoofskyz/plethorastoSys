@@ -4,5 +4,5 @@ require("mainFuncs")
 parallel.waitForAny(
 	terminalInput,
 	wirelessMessage,
-	storeageUpdate
+	sendData
 	)

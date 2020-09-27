@@ -7,6 +7,8 @@ local mainCan = modules.canvas()
 
 -- will be set in getWirelessMessage
 local storedItems
+local playerInv
+local playerEnd
 
 local w, h = mainCan.getSize()
 
@@ -27,8 +29,17 @@ wGetStored()
 function wirelessMessage()
 	while true do
 		local event, side, frequency, replyFrequency, message, distance = os.pullEvent("modem_message")
+		
+		local msgType = message:sub(1, 3)
+		message = message:sub(5)
 
-		storedItems = loadstring(message)()
+		if msgType == "sto" then
+			storedItems = loadstring(message)()
+		elseif msgType == "inv" then
+			playerInv = loadstring(message)()
+		elseif msgType == "end" then
+			playerEnd = loadstring(message)()
+		end
 		
 		os.queueEvent("loaded_stored")
 	end
@@ -68,8 +79,6 @@ function stoSys()
 				end
 			end
 			
-			print("Opening StoSys")
-			
 			icon[1].setItem("minecraft:structure_void")
 			icon[2].setItem("minecraft:air")
 			
@@ -84,49 +93,75 @@ function stoSys()
 				break
 			end
 			
-			can.addRectangle(32, 24, 448, 112, 0xAAAAAA44)
-			
-			local guiSlots = {group = {}, item = {}, count = {}, rect = {}}
-			
-			local slot = 1
-			
-			for row = 1, 8 do
-				for col = 1, 32 do
-					guiSlots["group"][slot] = can.addGroup({col * 14 + 18, row * 14 + 10 })
-					
-					-- want to add some cool animations and shrink the top/bottom items later
-					guiSlots["rect"][slot] = guiSlots["group"][slot].addRectangle(2, 2, 10, 10, 0x00000055)
-					guiSlots["item"][slot] = guiSlots["group"][slot].addItem({0, 0}, "minecraft:air", 0, 0.9)
-					guiSlots["count"][slot] = guiSlots["group"][slot].addText({0, 10}, "", 0xFFFFFFFF, 0.5)
-					
-					slot = slot + 1
+			local function createGuiSlots(x, y, width, height)
+				can.addRectangle(x, y, width * 14, height * 14, 0xAAAAAA44)
+				
+				local guiSlots = {group = {}, item = {}, count = {}, rect = {}, button = {}}
+				
+				local slot = 1
+				for row = 1, height do
+					for col = 1, width do
+						guiSlots["group"][slot] = can.addGroup({(col - 1) * 14 + x, (row - 1) * 14 + y })
+						
+						-- want to add some cool animations and shrink the top/bottom items later
+						guiSlots["rect"][slot] = guiSlots["group"][slot].addRectangle(2, 2, 10, 10, 0x00000055)
+						guiSlots["item"][slot] = guiSlots["group"][slot].addItem({0, 0}, "minecraft:air", 0, 0.9)
+						guiSlots["count"][slot] = guiSlots["group"][slot].addText({0, 10}, "", 0xFFFFFFFF, 0.5)
+						
+						guiSlots["button"][slot] = {
+								minX = (col - 1) * 14 + x,
+								minY = (row - 1) * 14 + y + 10,
+								maxX = (col - 1) * 14 + x + 14,
+								maxY = (row - 1) * 14 + y + 14 + 10,
+								slot = slot,
+								name = nil,
+								damage = nil
+								}
+						
+						slot = slot + 1
+					end
 				end
+				
+				return guiSlots
 			end
 			
-			function loadStoSys()
-				-- get the first key, value pair in storedItems
-				--		will be used to step through storedItems
-				local storedKey, storedItem = next(storedItems)
+			local stoSlots = createGuiSlots(32, 24, 32, 8)
+			local endSlots = createGuiSlots(46, 150, 9, 3)
+			local invSlots = createGuiSlots(200, 150, 9, 4)
 			
+			function loadSlots(guiSlots, itemList)
 				for slot = 1, #guiSlots["group"] do
 					guiSlots["item"][slot].setItem("minecraft:air", 0)
 					guiSlots["count"][slot].setText("")
-
-					if storedItem then
-						guiSlots["item"][slot].setItem(storedItem["name"], storedItem["damage"])
+					
+					local item = itemList[slot]
+					if item then
+						guiSlots["item"][slot].setItem(item["name"], item["damage"])
+						guiSlots["button"][slot]["name"] = item["name"]
+						guiSlots["button"][slot]["damage"] = item["damage"]
 						
-						if storedItem["count"] < 1000 then
-							guiSlots["count"][slot].setText(tostring(storedItem["count"]))
+						if item["count"] < 1000 then
+							guiSlots["count"][slot].setText(tostring(item["count"]))
 						else
 							guiSlots["count"][slot].setText("999+")
 						end
-						
-						storedKey, storedItem = next(storedItems, storedKey)
 					end
 				end
 			end
 			
-			loadStoSys()
+			loadSlots(stoSlots, storedItems)
+			loadSlots(endSlots, playerEnd)
+			
+			local fixedPlayerInv = {}
+			for i = 0, 36 do
+				if i <= 9 then
+					fixedPlayerInv[i + 27] = playerInv[i]
+				else
+					fixedPlayerInv[i - 9] = playerInv[i]
+				end
+			end
+			
+			loadSlots(invSlots, fixedPlayerInv)
 			
 			local searchOpen = false
 			can.addRectangle(206, 8, 100, 10, 0x888888AA) 
@@ -139,20 +174,28 @@ function stoSys()
 					while true do
 						local _, button, x, y = os.pullEvent("glasses_click")
 						
-						-- gets the index of guiSlots that the click was in
+						-- if the close button is clicked, close this loop
+						--		which will cause the gui to close
+						if x < 20 and y > 10 and y < 30 then
+							break
+						end
+						
+						--[[ gets the index of guiSlots that the click was in
 						-- floor((x|y - offset) / cellwidth|height) + 1 => col|row
 						local col = math.floor((x - 32) / 14) + 1
 						local row = math.floor((y - 34) / 14) + 1
 						local slot = ((row - 1) * 32) + col
 						
-						if guiSlots["group"][slot] then
-							getItem(guiSlots["item"][slot].getItem())
-						end
+						if stoSlots["group"][slot] then
+							getItem(stoSlots["item"][slot].getItem())
+						end--]]
 						
-						-- if the close button is clicked, close this loop
-						--		which will cause the gui to close
-						if x < 20 and y > 10 and y < 30 then
-							break
+						for _, button in ipairs(stoSlots["button"]) do
+							if (button["name"] ~= nil
+									and button["minX"] < x and button["maxX"] > x
+									and button["minY"] < y and button["maxY"] > y) then
+								getItem(button["name"], button["damage"])
+							end
 						end
 						
 						if 206 < x and x < 306 and 18 < y and y < 28 then
@@ -175,7 +218,19 @@ function stoSys()
 					while true do
 						os.pullEvent("loaded_stored")
 						
-						loadStoSys()
+						loadSlots(stoSlots, storedItems)
+						loadSlots(endSlots, playerEnd)
+						
+						local fixedPlayerInv = {}
+						for i = 0, 36 do
+							if i <= 9 then
+								fixedPlayerInv[i + 27] = playerInv[i]
+							else
+								fixedPlayerInv[i - 9] = playerInv[i]
+							end
+						end
+			
+						loadSlots(invSlots, fixedPlayerInv)
 					end
 				end,
 				

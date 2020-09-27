@@ -28,7 +28,7 @@ neural:
 	gui will probably be split off at some point
 	also want realtime
 	waypoints would be really cool
-	add player inventory/ender chest
+	add player inventory/ender chest -- over network instead of requiring a second introspection module 
 	might setup a hotkey to use a kinetic module to stick a keyboard in my hand and click when i press it 
 	make this searchable
 	item drag and drop
